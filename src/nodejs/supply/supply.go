@@ -887,7 +887,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$JAVA_HOME/lib/server
 `
 
 	if err := s.Stager.WriteProfileD("java.sh",
-		fmt.Sprintf(nodeScriptContents,
+		fmt.Sprintf(javaScriptContents,
 			filepath.Join("$DEPS_DIR", s.Stager.DepsIdx(), "java"))); err != nil {
 		return err
 	}
