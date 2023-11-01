@@ -129,6 +129,11 @@ func Run(s *Supplier) error {
 			return err
 		}
 
+		if err := s.InstallJava(); err != nil {
+			s.Log.Error("Unable to install java: %s", err.Error())
+			return err
+		}
+
 		if err := s.CreateDefaultEnv(); err != nil {
 			s.Log.Error("Unable to setup default environment: %s", err.Error())
 			return err
