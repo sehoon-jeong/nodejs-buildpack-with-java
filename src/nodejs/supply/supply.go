@@ -799,6 +799,32 @@ func (s *Supplier) InstallYarn() error {
 	return nil
 }
 
+func (s *Supplier) InstallJava() error {
+	dep := libbuildpack.Dependency{
+		Name:    "java",
+		Version: "17",
+	}
+
+	nodeInstallDir := filepath.Join(s.Stager.DepDir(), "java")
+	if err := s.Installer.InstallDependency(dep, nodeInstallDir); err != nil {
+		return err
+	}
+
+	if err := s.Stager.LinkDirectoryInDepDir(filepath.Join(nodeInstallDir, "jdk-17.0.9+9", "bin"), "bin"); err != nil {
+		return err
+	}
+
+	if err := os.Setenv("JAVA_HOME", filepath.Join(nodeInstallDir, "jdk-17.0.9+9")); err != nil {
+		return err
+	}
+
+	if err := os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(nodeInstallDir, "jdk-17.0.9+9", "bin"))); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Supplier) CreateDefaultEnv() error {
 	var environmentDefaults = map[string]string{
 		"NODE_ENV":              "production",
@@ -824,7 +850,7 @@ func (s *Supplier) CreateDefaultEnv() error {
 		return err
 	}
 
-	scriptContents := `export NODE_HOME=%[1]s
+	nodeScriptContents := `export NODE_HOME=%[1]s
 export NODE_ENV=${NODE_ENV:-production}
 export MEMORY_AVAILABLE=$(echo $VCAP_APPLICATION | jq '.limits.mem')
 export WEB_MEMORY=${WEB_MEMORY:-512}
@@ -844,13 +870,29 @@ export PATH=$PATH:"$HOME/bin":$NODE_PATH/.bin
 	}
 
 	if requiresSSLEnvVars {
-		scriptContents += `export SSL_CERT_DIR=${SSL_CERT_DIR:-/etc/ssl/certs}
+		nodeScriptContents += `export SSL_CERT_DIR=${SSL_CERT_DIR:-/etc/ssl/certs}
 `
 	}
-	return s.Stager.WriteProfileD("node.sh",
-		fmt.Sprintf(scriptContents,
+
+	if err := s.Stager.WriteProfileD("node.sh",
+		fmt.Sprintf(nodeScriptContents,
 			filepath.Join("$DEPS_DIR", s.Stager.DepsIdx(), "node"),
-			filepath.Join("$DEPS_DIR", s.Stager.DepsIdx(), "node_modules")))
+			filepath.Join("$DEPS_DIR", s.Stager.DepsIdx(), "node_modules"))); err != nil {
+		return err
+	}
+
+	javaScriptContents := `export JAVA_HOME=%[1]s/jdk-17.0.9+9
+export PATH=$PATH:$JAVA_HOME/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$JAVA_HOME/lib/server
+`
+
+	if err := s.Stager.WriteProfileD("java.sh",
+		fmt.Sprintf(nodeScriptContents,
+			filepath.Join("$DEPS_DIR", s.Stager.DepsIdx(), "java"))); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func copyAll(srcDir, destDir string, files []string) error {
