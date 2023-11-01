@@ -805,20 +805,20 @@ func (s *Supplier) InstallJava() error {
 		Version: "17",
 	}
 
-	nodeInstallDir := filepath.Join(s.Stager.DepDir(), "java")
-	if err := s.Installer.InstallDependency(dep, nodeInstallDir); err != nil {
+	javaInstallDir := filepath.Join(s.Stager.DepDir(), "java")
+	if err := s.Installer.InstallDependency(dep, javaInstallDir); err != nil {
 		return err
 	}
 
-	if err := s.Stager.LinkDirectoryInDepDir(filepath.Join(nodeInstallDir, "jdk-17.0.9+9", "bin"), "bin"); err != nil {
+	if err := s.Stager.LinkDirectoryInDepDir(filepath.Join(javaInstallDir, "jdk-17.0.9+9", "bin"), "bin"); err != nil {
 		return err
 	}
 
-	if err := os.Setenv("JAVA_HOME", filepath.Join(nodeInstallDir, "jdk-17.0.9+9")); err != nil {
+	if err := os.Setenv("JAVA_HOME", filepath.Join(javaInstallDir, "jdk-17.0.9+9")); err != nil {
 		return err
 	}
 
-	if err := os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(nodeInstallDir, "jdk-17.0.9+9", "bin"))); err != nil {
+	if err := os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(javaInstallDir, "jdk-17.0.9+9", "bin"))); err != nil {
 		return err
 	}
 
